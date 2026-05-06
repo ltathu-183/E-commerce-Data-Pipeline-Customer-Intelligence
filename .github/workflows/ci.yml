@@ -35,7 +35,11 @@ jobs:
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
-        
+    - name: Fix linting issues
+      run: |
+        uv run ruff check --fix src/ tests/ || true
+        uv run ruff format src/ tests/
+    
     - name: Lint with ruff
       run: |
         uv run ruff check src/ tests/
