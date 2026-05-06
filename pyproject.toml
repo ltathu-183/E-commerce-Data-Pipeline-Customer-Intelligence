@@ -46,6 +46,10 @@ mlops = [
     "mlflow",
     "dagshub",               # Useful if you are using remote tracking
 ]
+test = ["pytest>=7.0", "pytest-cov>=4.0"]
+
+[tool.uv]
+dev-dependencies = ["pytest", "pytest-cov"]
 
 [tool.black]
 line-length = 88
