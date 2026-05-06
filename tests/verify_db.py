@@ -1,0 +1,16 @@
+from sqlalchemy import create_engine, text
+import os
+
+os.environ["DB_USER"] = "postgres"
+os.environ["DB_PASSWORD"] = "password"
+os.environ["DB_HOST"] = "localhost"
+os.environ["DB_PORT"] = "5432"
+os.environ["DB_NAME"] = "ecommerce"
+
+conn_str = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+engine = create_engine(conn_str)
+
+with engine.connect() as conn:
+    result = conn.execute(text("SELECT version()"))
+    print("✅ Connection successful!")
+    print(result.fetchone())
