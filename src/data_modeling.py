@@ -34,22 +34,22 @@ CREATE TABLE IF NOT EXISTS dim_customers (
     customer_zip_code_prefix VARCHAR(10),
     customer_city VARCHAR(100),
     customer_state VARCHAR(2),
-    
+
     -- Metadata
     record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     record_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     CONSTRAINT check_state_length CHECK (LENGTH(customer_state) = 2)
 );
 
 CREATE INDEX idx_dim_customers_city ON dim_customers(customer_city);
 CREATE INDEX idx_dim_customers_state ON dim_customers(customer_state);
 
-COMMENT ON TABLE dim_customers IS 
+COMMENT ON TABLE dim_customers IS
     'Customer dimension: maps customer_id to demographics and location';
-COMMENT ON COLUMN dim_customers.customer_id IS 
+COMMENT ON COLUMN dim_customers.customer_id IS
     'Primary key: unique customer identifier';
-COMMENT ON COLUMN dim_customers.customer_state IS 
+COMMENT ON COLUMN dim_customers.customer_state IS
     'Brazilian state abbreviation (2 chars)';
 
 
@@ -69,23 +69,23 @@ CREATE TABLE IF NOT EXISTS dim_products (
     product_length_cm INT,
     product_height_cm INT,
     product_width_cm INT,
-    
+
     -- Metadata
     record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     CONSTRAINT check_weight_positive CHECK (product_weight_g >= 0),
     CONSTRAINT check_photos_positive CHECK (product_photos_qty >= 0)
 );
 
 CREATE INDEX idx_dim_products_category ON dim_products(product_category_name);
 
-COMMENT ON TABLE dim_products IS 
+COMMENT ON TABLE dim_products IS
     'Product dimension: product characteristics and category';
-COMMENT ON COLUMN dim_products.product_id IS 
+COMMENT ON COLUMN dim_products.product_id IS
     'Primary key: unique product identifier';
-COMMENT ON COLUMN dim_products.product_category_name IS 
+COMMENT ON COLUMN dim_products.product_category_name IS
     'Product category in Portuguese';
-COMMENT ON COLUMN dim_products.product_category_name_english IS 
+COMMENT ON COLUMN dim_products.product_category_name_english IS
     'Product category translated to English';
 
 
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS dim_time (
     quarter INT,
     week_of_year INT,
     is_weekend BOOLEAN,
-    
+
     CONSTRAINT check_month_range CHECK (month >= 1 AND month <= 12),
     CONSTRAINT check_day_range CHECK (day >= 1 AND day <= 31),
     CONSTRAINT check_dow_range CHECK (day_of_week >= 0 AND day_of_week <= 6),
@@ -116,9 +116,9 @@ CREATE TABLE IF NOT EXISTS dim_time (
 CREATE INDEX idx_dim_time_year_month ON dim_time(year, month);
 CREATE INDEX idx_dim_time_day_of_week ON dim_time(day_of_week);
 
-COMMENT ON TABLE dim_time IS 
+COMMENT ON TABLE dim_time IS
     'Time dimension: date hierarchy for temporal analysis';
-COMMENT ON COLUMN dim_time.date_key IS 
+COMMENT ON COLUMN dim_time.date_key IS
     'Surrogate key for dates (format: YYYYMMDD)';
 
 
@@ -132,16 +132,16 @@ CREATE TABLE IF NOT EXISTS dim_sellers (
     seller_zip_code_prefix VARCHAR(10),
     seller_city VARCHAR(100),
     seller_state VARCHAR(2),
-    
+
     -- Metadata
     record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     CONSTRAINT check_state_len CHECK (LENGTH(seller_state) = 2)
 );
 
 CREATE INDEX idx_dim_sellers_state ON dim_sellers(seller_state);
 
-COMMENT ON TABLE dim_sellers IS 
+COMMENT ON TABLE dim_sellers IS
     'Seller dimension: merchant information and location';
 
 
@@ -152,7 +152,7 @@ COMMENT ON TABLE dim_sellers IS
 -- FACT_ORDER_ITEMS
 -- Purpose: Transaction-level facts for e-commerce analysis
 -- Grain: ITEM-LEVEL (1 row = 1 product in 1 order)
--- 
+--
 -- Why item-level?
 --   1. Enables product-level analysis (best sellers, category trends)
 --   2. Flexible aggregation (can sum to order or customer level)
@@ -167,40 +167,40 @@ CREATE TABLE IF NOT EXISTS fact_order_items (
     seller_id VARCHAR(50) NOT NULL,
     customer_id VARCHAR(50) NOT NULL,
     order_purchase_date DATE NOT NULL,  -- Foreign key to dim_time
-    
+
     -- Financial Facts (measures)
     price DECIMAL(10, 2) NOT NULL,
     freight_value DECIMAL(10, 2) NOT NULL,
     total_value DECIMAL(10, 2) NOT NULL,  -- price + freight
-    
+
     -- Temporal Facts
     order_purchase_timestamp TIMESTAMP NOT NULL,
     order_delivered_timestamp TIMESTAMP,
     order_estimated_delivery_date DATE,
-    
+
     -- Calculated Facts
     delivery_time_days INT,  -- days from purchase to delivery
     estimated_delivery_days INT,  -- estimated delivery time
     is_delayed INT,  -- 1 if late, 0 if on-time
     is_delivered INT,  -- 1 if delivered, 0 otherwise
-    
+
     -- Dimension References (for analysis)
     order_status VARCHAR(20),  -- 'delivered', 'cancelled', etc.
-    
+
     -- Metadata
     record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Constraints
     PRIMARY KEY (order_id, order_item_id),
-    CONSTRAINT fk_fact_customer FOREIGN KEY (customer_id) 
+    CONSTRAINT fk_fact_customer FOREIGN KEY (customer_id)
         REFERENCES dim_customers(customer_id),
-    CONSTRAINT fk_fact_product FOREIGN KEY (product_id) 
+    CONSTRAINT fk_fact_product FOREIGN KEY (product_id)
         REFERENCES dim_products(product_id),
-    CONSTRAINT fk_fact_seller FOREIGN KEY (seller_id) 
+    CONSTRAINT fk_fact_seller FOREIGN KEY (seller_id)
         REFERENCES dim_sellers(seller_id),
-    CONSTRAINT fk_fact_date FOREIGN KEY (order_purchase_date) 
+    CONSTRAINT fk_fact_date FOREIGN KEY (order_purchase_date)
         REFERENCES dim_time(date_id),
-    
+
     CONSTRAINT check_price_positive CHECK (price >= 0),
     CONSTRAINT check_freight_positive CHECK (freight_value >= 0),
     CONSTRAINT check_total_value CHECK (total_value = price + freight_value),
@@ -216,15 +216,15 @@ CREATE INDEX idx_fact_order_date ON fact_order_items(order_purchase_date);
 CREATE INDEX idx_fact_order_status ON fact_order_items(order_status);
 CREATE INDEX idx_fact_delayed ON fact_order_items(is_delayed);
 
-COMMENT ON TABLE fact_order_items IS 
+COMMENT ON TABLE fact_order_items IS
     'Fact table: E-commerce transactions at item-level. Grain: 1 row = 1 product in 1 order.';
-COMMENT ON COLUMN fact_order_items.order_id IS 
+COMMENT ON COLUMN fact_order_items.order_id IS
     'Order identifier (dimension reference to orders)';
-COMMENT ON COLUMN fact_order_items.order_item_id IS 
+COMMENT ON COLUMN fact_order_items.order_item_id IS
     'Line item number within order (unique per order)';
-COMMENT ON COLUMN fact_order_items.total_value IS 
+COMMENT ON COLUMN fact_order_items.total_value IS
     'Measure: price + freight (revenue per item)';
-COMMENT ON COLUMN fact_order_items.is_delayed IS 
+COMMENT ON COLUMN fact_order_items.is_delayed IS
     'Flag: 1 if delivery_time > estimated_delivery_days, else 0';
 
 
@@ -238,38 +238,38 @@ COMMENT ON COLUMN fact_order_items.is_delayed IS
 
 CREATE TABLE IF NOT EXISTS agg_customer_metrics (
     customer_id VARCHAR(50) PRIMARY KEY,
-    
+
     -- Count metrics
     total_orders INT,
     total_items INT,
-    
+
     -- Monetary metrics
     total_revenue DECIMAL(12, 2),
     avg_order_value DECIMAL(10, 2),
     min_order_value DECIMAL(10, 2),
     max_order_value DECIMAL(10, 2),
-    
+
     -- Behavioral metrics
     first_order_date DATE,
     last_order_date DATE,
     days_as_customer INT,
-    
+
     -- Quality metrics
     pct_delivered DECIMAL(5, 2),
     pct_delayed DECIMAL(5, 2),
     avg_delivery_time_days INT,
-    
+
     -- Metadata
     record_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_agg_customer FOREIGN KEY (customer_id) 
+
+    CONSTRAINT fk_agg_customer FOREIGN KEY (customer_id)
         REFERENCES dim_customers(customer_id)
 );
 
 CREATE INDEX idx_agg_customer_revenue ON agg_customer_metrics(total_revenue DESC);
 CREATE INDEX idx_agg_customer_orders ON agg_customer_metrics(total_orders DESC);
 
-COMMENT ON TABLE agg_customer_metrics IS 
+COMMENT ON TABLE agg_customer_metrics IS
     'Aggregate: Customer-level metrics for dashboard and RFM analysis';
 
 
@@ -278,16 +278,16 @@ COMMENT ON TABLE agg_customer_metrics IS
 
 CREATE TABLE IF NOT EXISTS agg_product_metrics (
     product_id VARCHAR(50) PRIMARY KEY,
-    
+
     -- Volume metrics
     units_sold INT,
     orders_count INT,
-    
+
     -- Revenue metrics
     total_revenue DECIMAL(12, 2),
     avg_price DECIMAL(10, 2),
     avg_freight_value DECIMAL(8, 2),
-    
+
     -- Performance metrics
     avg_delivery_time_days INT,
     pct_delayed DECIMAL(5, 2),
@@ -298,15 +298,15 @@ CREATE TABLE IF NOT EXISTS agg_product_metrics (
 
     -- Metadata
     record_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_agg_product FOREIGN KEY (product_id) 
+
+    CONSTRAINT fk_agg_product FOREIGN KEY (product_id)
         REFERENCES dim_products(product_id)
 );
 
 CREATE INDEX idx_agg_product_revenue ON agg_product_metrics(total_revenue DESC);
 CREATE INDEX idx_agg_product_units ON agg_product_metrics(units_sold DESC);
 
-COMMENT ON TABLE agg_product_metrics IS 
+COMMENT ON TABLE agg_product_metrics IS
     'Aggregate: Product performance metrics for product analytics';
 
 
@@ -316,20 +316,20 @@ COMMENT ON TABLE agg_product_metrics IS
 CREATE TABLE IF NOT EXISTS agg_monthly_revenue (
     year INT NOT NULL,
     month INT NOT NULL,
-    
+
     total_revenue DECIMAL(12, 2),
     order_count INT,
     item_count INT,
     unique_customers INT,
     avg_order_value DECIMAL(10, 2),
-    
+
     record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     PRIMARY KEY (year, month),
     CONSTRAINT check_month CHECK (month >= 1 AND month <= 12)
 );
 
-COMMENT ON TABLE agg_monthly_revenue IS 
+COMMENT ON TABLE agg_monthly_revenue IS
     'Aggregate: Monthly revenue trends for time-series analysis';
 
 
@@ -350,7 +350,7 @@ SELECT
 FROM fact_order_items
 GROUP BY order_id, customer_id;
 
-COMMENT ON VIEW v_order_metrics IS 
+COMMENT ON VIEW v_order_metrics IS
     'Order-level aggregation from item-level fact table';
 
 
@@ -366,7 +366,7 @@ SELECT
 FROM fact_order_items
 GROUP BY customer_id;
 
-COMMENT ON VIEW v_customer_order_history IS 
+COMMENT ON VIEW v_customer_order_history IS
     'Customer summary for RFM analysis and segmentation';
 
 """
@@ -487,11 +487,11 @@ SELECT
     o.order_estimated_delivery_date,
     DATEDIFF(day, o.order_purchase_timestamp, o.order_delivered_customer_date) as delivery_time_days,
     DATEDIFF(day, o.order_purchase_timestamp, o.order_estimated_delivery_date) as estimated_delivery_days,
-    CASE 
-        WHEN DATEDIFF(day, o.order_purchase_timestamp, o.order_delivered_customer_date) > 
-             DATEDIFF(day, o.order_purchase_timestamp, o.order_estimated_delivery_date) 
-        THEN 1 
-        ELSE 0 
+    CASE
+        WHEN DATEDIFF(day, o.order_purchase_timestamp, o.order_delivered_customer_date) >
+             DATEDIFF(day, o.order_purchase_timestamp, o.order_estimated_delivery_date)
+        THEN 1
+        ELSE 0
     END as is_delayed,
     CASE WHEN o.order_status = 'delivered' THEN 1 ELSE 0 END as is_delivered,
     o.order_status

@@ -13,14 +13,15 @@ Enhanced ETL with:
 Status: PRODUCTION-READY
 """
 
-import pandas as pd
-import numpy as np
-import os
 import logging
+import os
+import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Tuple, Optional
-import warnings
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
+import pandas as pd
 
 warnings.filterwarnings("ignore")
 
@@ -77,7 +78,7 @@ class ReviewNLP:
                 "sentiment_polarity": blob.sentiment.polarity,
                 "sentiment_subjectivity": blob.sentiment.subjectivity,
             }
-        except:
+        except Exception:
             return {"sentiment_polarity": np.nan, "sentiment_subjectivity": np.nan}
 
     @staticmethod
@@ -87,7 +88,7 @@ class ReviewNLP:
             from langdetect import detect
 
             return detect(str(text))
-        except:
+        except Exception:
             return "unknown"
 
     @staticmethod
@@ -97,7 +98,7 @@ class ReviewNLP:
             import emoji
 
             return sum(1 for c in str(text) if c in emoji.EMOJI_DATA)
-        except:
+        except Exception:
             return 0
 
     @staticmethod
@@ -160,7 +161,7 @@ class ReviewNLP:
                 df[col] = df[col].fillna(-999)  # Sentinel value for "no text"
 
         logger.info(
-            f"  ✓ Added NLP features: sentiment_polarity, sentiment_subjectivity, review_language, emoji_count"
+            "  ✓ Added NLP features: sentiment_polarity, sentiment_subjectivity, review_language, emoji_count"
         )
         return df
 
@@ -242,12 +243,6 @@ class DataExtractor:
 # STAGE 2: TRANSFORM - CLEANING & VALIDATION
 # ============================================================================
 
-import pandas as pd
-import numpy as np
-import logging
-from datetime import datetime
-from typing import Dict, Tuple, List
-
 logger = logging.getLogger(__name__)
 
 
@@ -305,7 +300,7 @@ class DataCleaner:
         df: pd.DataFrame, datetime_columns: Dict[str, str]
     ) -> pd.DataFrame:
         """Convert and standardize datetime columns with error logging"""
-        for col, fmt in datetime_columns.items():
+        for col, _fmt in datetime_columns.items():
             if col not in df.columns:
                 continue
             before = df[col].notna().sum()
@@ -571,7 +566,7 @@ class DataTransformer:
             logger.info(f"✓ {table_name}: {len(df):,} rows (quality validated)")
 
         # Post-cleaning audit
-        logger.info(f"\n Post-cleaning missing value audit:")
+        logger.info("\n Post-cleaning missing value audit:")
         for name, df in datasets.items():
             missing = df.isnull().sum()
             remaining = missing[missing > 0]
@@ -962,7 +957,6 @@ class DataLoader:
             return
 
         from sqlalchemy import text
-        from sqlalchemy.exc import IntegrityError
 
         # Create temp table
         temp_table = f"{table_name}_temp"
@@ -1030,7 +1024,7 @@ class DataLoader:
 
         # Fact table
         fact_table.to_csv(dwh_dir / "fact_order_items.csv", index=False)
-        logger.info(f"✓ fact_order_items.csv")
+        logger.info("✓ fact_order_items.csv")
 
         # Aggregates
         for table_name, df in aggregates.items():
@@ -1203,7 +1197,7 @@ class ETLPipeline:
             logger.info("ETL PIPELINE COMPLETED (with possible warnings)")
             logger.info("=" * 80)
             logger.info(f"End time: {datetime.now()}")
-            logger.info(f"\nOutputs:")
+            logger.info("\nOutputs:")
             logger.info(f"  CSV: {Config.DATA_PROCESSED}")
             if use_database or (use_database is None and DatabaseConfig.USE_DATABASE):
                 logger.info(f"  Database: {DatabaseConfig.DB_NAME} (if available)")
@@ -1211,7 +1205,7 @@ class ETLPipeline:
             return datasets, dimensions, aggregates, fact_order_items
 
         except Exception as e:
-            logger.error(f"\n ETL PIPELINE FAILED CRITICALLY")
+            logger.error("\n ETL PIPELINE FAILED CRITICALLY")
             logger.error(f"Error: {str(e)}")
             logger.info("Returning partial results for debugging...")
             return datasets, dimensions, aggregates, fact_order_items
@@ -1229,9 +1223,9 @@ if __name__ == "__main__":
     print("PIPELINE SUMMARY")
     print("=" * 80)
     print(f"\nFact Table: {len(fact_table):,} rows")
-    print(f"Dimensions:")
+    print("Dimensions:")
     for name, df in dimensions.items():
         print(f"  • {name}: {len(df):,} rows")
-    print(f"Aggregates:")
+    print("Aggregates:")
     for name, df in aggregates.items():
         print(f"  • {name}: {len(df):,} rows")

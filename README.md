@@ -94,13 +94,3 @@ This project demonstrates senior-level data engineering skills that hiring manag
 | Missing Data Folder | "File not found" error for CSV files | Ensure `data/raw/` contains all 8 Olist dataset files from Kaggle |
 
 For other issues, check logs in terminal output or run `python -c "import pandas as pd; print('Dependencies OK')"` to verify environment.
-
-## Next Steps
-
-- **Fork this repo** and customize for your own datasets
-- **Star the project** if it helped your portfolio
-- **Connect on LinkedIn** - let's discuss data engineering opportunities
-- **Extend it:** Add ML models for churn prediction or real-time streaming with Kafka
-
-Built with ❤️ for the data engineering community. Questions? Open an issue!
-

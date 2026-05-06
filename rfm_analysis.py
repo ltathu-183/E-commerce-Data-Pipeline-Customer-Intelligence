@@ -6,12 +6,13 @@ Standalone Python script to perform RFM customer segmentation
 based on the processed ETL data.
 """
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from datetime import datetime, timedelta
 import warnings
+from datetime import timedelta
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
 warnings.filterwarnings('ignore')
 
 # Set visualization style
@@ -32,7 +33,7 @@ def main():
 
     # Convert timestamp to datetime
     fact_df['order_purchase_timestamp'] = pd.to_datetime(fact_df['order_purchase_timestamp'])
-    print(f"\n✓ Data loaded and prepared")
+    print("\n✓ Data loaded and prepared")
 
     # ============================================================================
     # 1. RFM METRICS CALCULATION
@@ -185,32 +186,32 @@ def main():
 
     # 1. Revenue concentration
     top_segment = segment_stats.loc[segment_stats['pct_revenue'].idxmax()]
-    print(f"\n1. REVENUE CONCENTRATION (Pareto Analysis)")
+    print("\n1. REVENUE CONCENTRATION (Pareto Analysis)")
     print(f"   Top segment ({top_segment['segment']}) has:")
     print(f"   - {top_segment['pct_customers']}% of customers")
     print(f"   - {top_segment['pct_revenue']}% of revenue")
-    print(f"   💡 Action: Prioritize retention of high-value segments")
+    print("   💡 Action: Prioritize retention of high-value segments")
 
     # 2. At-risk customers
     at_risk = rfm[rfm['segment'] == 'At Risk']
     if len(at_risk) > 0:
         at_risk_revenue = at_risk['monetary'].sum()
-        print(f"\n2. AT-RISK SEGMENT")
+        print("\n2. AT-RISK SEGMENT")
         print(f"   - {len(at_risk)} customers ({len(at_risk)/len(rfm)*100:.1f}% of base)")
         print(f"   - Potential revenue at stake: R$ {at_risk_revenue:,.2f}")
-        print(f"   💡 Action: Launch win-back campaign with special offers")
+        print("   💡 Action: Launch win-back campaign with special offers")
 
     # 3. New customers
     new_customers = rfm[rfm['segment'] == 'New Customers']
     if len(new_customers) > 0:
-        print(f"\n3. NEW CUSTOMER ONBOARDING")
+        print("\n3. NEW CUSTOMER ONBOARDING")
         print(f"   - {len(new_customers)} customers ({len(new_customers)/len(rfm)*100:.1f}% of base)")
         print(f"   - Average CLV: R$ {new_customers['monetary'].mean():.2f}")
-        print(f"   💡 Action: Implement onboarding program to drive repeat purchase")
+        print("   💡 Action: Implement onboarding program to drive repeat purchase")
 
     # 4. Loyalty metrics
     repeat_pct = (len(rfm[rfm['frequency'] > 1]) / len(rfm) * 100)
-    print(f"\n4. LOYALTY METRICS")
+    print("\n4. LOYALTY METRICS")
     print(f"   - Repeat purchase rate: {repeat_pct:.1f}%")
     print(f"   - Average customer value: R$ {rfm['monetary'].mean():.2f}")
     print(f"   💡 Action: Target is >30% repeat rate; current status: {'✓ GOOD' if repeat_pct > 30 else '✗ NEEDS IMPROVEMENT'}")
@@ -225,12 +226,12 @@ def main():
                        'customer_city', 'customer_state']]
     rfm_export.to_csv('data/processed/rfm_segmentation.csv', index=False)
 
-    print(f"\n✓ RFM segmentation exported to data/processed/rfm_segmentation.csv")
+    print("\n✓ RFM segmentation exported to data/processed/rfm_segmentation.csv")
     print(f"   Total customers segmented: {len(rfm_export)}")
 
     # Save segment statistics
     segment_stats.to_csv('data/processed/rfm_segment_stats.csv', index=False)
-    print(f"✓ Segment statistics exported to data/processed/rfm_segment_stats.csv")
+    print("✓ Segment statistics exported to data/processed/rfm_segment_stats.csv")
 
     print("\n" + "="*80)
     print("RFM SEGMENTATION COMPLETED SUCCESSFULLY")

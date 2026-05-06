@@ -1,5 +1,6 @@
-from sqlalchemy import create_engine, text
 import os
+
+from sqlalchemy import create_engine, text
 
 os.environ["DB_USER"] = "postgres"
 os.environ["DB_PASSWORD"] = "password"

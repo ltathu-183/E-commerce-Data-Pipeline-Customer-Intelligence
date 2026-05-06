@@ -1,6 +1,6 @@
 version = 1
 revision = 3
-requires-python = "==3.11"
+requires-python = "==3.11.*"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -587,7 +587,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli" },
+    { name = "tomli", marker = "python_full_version <= '3.11'" },
 ]
 
 [[package]]
@@ -1003,6 +1003,18 @@ mlops = [
     { name = "dvc" },
     { name = "mlflow" },
 ]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1025,7 +1037,9 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = ">=2.9.0" },
     { name = "pytest", specifier = ">=9.0.3" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=7.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "scikit-learn", specifier = ">=1.2.0" },
     { name = "scipy", specifier = ">=1.10.0" },
@@ -1034,7 +1048,15 @@ requires-dist = [
     { name = "statsmodels", specifier = ">=0.14.0" },
     { name = "textblob", specifier = ">=0.17.0" },
 ]
-provides-extras = ["dev", "mlops"]
+provides-extras = ["dev", "mlops", "test"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=1.0" },
+    { name = "pytest", specifier = ">=7.0" },
+    { name = "pytest-cov", specifier = ">=4.0" },
+    { name = "ruff", specifier = ">=0.3.0" },
+]
 
 [[package]]
 name = "emoji"

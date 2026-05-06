@@ -149,9 +149,9 @@ SELECT
     ROUND(AVG(purchase_count), 2) as avg_purchases_per_customer,
     ROUND(AVG(total_spent), 2) as avg_customer_lifetime_value,
     -- WINDOW FUNCTION: Customer segments
-    SUM(CASE 
-        WHEN purchase_count > 5 THEN total_spent 
-        ELSE 0 
+    SUM(CASE
+        WHEN purchase_count > 5 THEN total_spent
+        ELSE 0
     END) as revenue_from_high_frequency_customers,
     MAX(purchase_count) as max_purchases_by_single_customer
 FROM customer_purchases;
@@ -177,13 +177,13 @@ SELECT
     months_since_first_purchase,
     COUNT(DISTINCT customer_id) as customers_in_cohort,
     ROUND(
-        100.0 * COUNT(DISTINCT customer_id) / 
+        100.0 * COUNT(DISTINCT customer_id) /
         (SELECT COUNT(DISTINCT customer_id) FROM customer_cohorts WHERE cohort_month = c.cohort_month),
         2
     ) as cohort_retention_pct
 FROM customer_cohorts c
 GROUP BY cohort_month, months_since_first_purchase
-HAVING DATEDIFF(month, MIN(DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)), 
+HAVING DATEDIFF(month, MIN(DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)),
                 FORMAT(GETDATE(), 'yyyy-MM')) >= months_since_first_purchase
 ORDER BY cohort_month, months_since_first_purchase;
 
@@ -198,13 +198,13 @@ WITH rfm_base AS (
         f.customer_id,
         c.customer_city,
         c.customer_state,
-        
+
         -- RECENCY: Days since last purchase
         DATEDIFF(day, MAX(f.order_purchase_date), CAST(GETDATE() AS DATE)) as recency_days,
-        
+
         -- FREQUENCY: Number of purchases
         COUNT(DISTINCT f.order_id) as frequency,
-        
+
         -- MONETARY: Total revenue from customer
         SUM(f.total_value) as monetary
     FROM fact_order_items f
@@ -220,13 +220,13 @@ rfm_scores AS (
         recency_days,
         frequency,
         monetary,
-        
+
         -- WINDOW FUNCTIONS: Quartile ranking (lower recency is better)
         NTILE(4) OVER (ORDER BY recency_days DESC) as r_score,
-        
+
         -- WINDOW FUNCTIONS: Quartile ranking (higher frequency is better)
         NTILE(4) OVER (ORDER BY frequency ASC) as f_score,
-        
+
         -- WINDOW FUNCTIONS: Quartile ranking (higher monetary is better)
         NTILE(4) OVER (ORDER BY monetary ASC) as m_score
     FROM rfm_base
@@ -300,7 +300,7 @@ SELECT
     -- WINDOW FUNCTIONS: % of total revenue
     ROUND(100.0 * total_revenue / SUM(total_revenue) OVER (), 2) as pct_of_total_revenue,
     -- WINDOW FUNCTIONS: Cumulative %
-    ROUND(100.0 * SUM(total_revenue) OVER (ORDER BY total_revenue DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / 
+    ROUND(100.0 * SUM(total_revenue) OVER (ORDER BY total_revenue DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) /
           SUM(total_revenue) OVER (), 2) as cumulative_pct_of_revenue
 FROM product_stats
 ORDER BY total_revenue DESC;
@@ -434,7 +434,7 @@ ORDER BY total_payment_value DESC;
 """
 
 print("\\n✓ Analytics Queries Loaded Successfully")
-print(f"Total queries defined: 11")
+print("Total queries defined: 11")
 print("\\nQuery Categories:")
 print("  1. Revenue & Sales Metrics (3 queries)")
 print("  2. Customer Segmentation & Retention (3 queries)")

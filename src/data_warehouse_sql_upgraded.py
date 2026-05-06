@@ -37,11 +37,11 @@ CREATE TABLE IF NOT EXISTS dim_customers (
     customer_zip_code_prefix VARCHAR(10),
     customer_city VARCHAR(100) NOT NULL,
     customer_state VARCHAR(2) NOT NULL,
-    
+
     -- Metadata (data lineage)
     etl_loaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_source VARCHAR(50),
-    
+
     CONSTRAINT check_state_length CHECK (LENGTH(customer_state) = 2)
 );
 
@@ -64,11 +64,11 @@ CREATE TABLE IF NOT EXISTS dim_products (
     product_length_cm INT DEFAULT 0,
     product_height_cm INT DEFAULT 0,
     product_width_cm INT DEFAULT 0,
-    
+
     -- Metadata
     etl_loaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_source VARCHAR(50),
-    
+
     CONSTRAINT check_weight CHECK (product_weight_g >= 0),
     CONSTRAINT check_photos CHECK (product_photos_qty >= 0)
 );
@@ -84,11 +84,11 @@ CREATE TABLE IF NOT EXISTS dim_sellers (
     seller_zip_code_prefix VARCHAR(10),
     seller_city VARCHAR(100),
     seller_state VARCHAR(2),
-    
+
     -- Metadata
     etl_loaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_source VARCHAR(50),
-    
+
     CONSTRAINT check_seller_state CHECK (LENGTH(seller_state) = 2)
 );
 
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS dim_time (
     quarter INT,
     week_of_year INT,
     is_weekend INT,
-    
+
     CONSTRAINT check_month CHECK (month >= 1 AND month <= 12),
     CONSTRAINT check_quarter CHECK (quarter >= 1 AND quarter <= 4)
 );
@@ -147,42 +147,42 @@ CREATE TABLE IF NOT EXISTS fact_order_items (
     seller_id VARCHAR(50) NOT NULL,
     customer_id VARCHAR(50) NOT NULL,
     order_purchase_date DATE NOT NULL,
-    
+
     -- Financial Measures
     price DECIMAL(10, 2) NOT NULL,
     freight_value DECIMAL(10, 2) NOT NULL DEFAULT 0,
     total_value DECIMAL(10, 2) NOT NULL,  -- price + freight
-    
+
     -- Temporal Measures
     order_purchase_timestamp TIMESTAMP NOT NULL,
     order_delivered_timestamp TIMESTAMP,
     order_estimated_delivery_date DATE,
-    
+
     -- Calculated Features
     delivery_time_days INT,
     estimated_delivery_days INT,
-    
+
     -- Flags (instead of nulls)
     is_delayed INT,           -- 1 if late, 0 if on-time
     has_delivery_date INT,    -- 1 if delivered, 0 if null
     is_delivered INT,
-    
+
     -- Dimension References
     order_status VARCHAR(20),
-    
+
     -- Metadata (data lineage)
     etl_loaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_source VARCHAR(50),
-    
+
     -- Constraints
     PRIMARY KEY (order_id, order_item_id),
-    CONSTRAINT fk_fact_customer FOREIGN KEY (customer_id) 
+    CONSTRAINT fk_fact_customer FOREIGN KEY (customer_id)
         REFERENCES dim_customers(customer_id),
-    CONSTRAINT fk_fact_product FOREIGN KEY (product_id) 
+    CONSTRAINT fk_fact_product FOREIGN KEY (product_id)
         REFERENCES dim_products(product_id),
-    CONSTRAINT fk_fact_seller FOREIGN KEY (seller_id) 
+    CONSTRAINT fk_fact_seller FOREIGN KEY (seller_id)
         REFERENCES dim_sellers(seller_id),
-    CONSTRAINT fk_fact_date FOREIGN KEY (order_purchase_date) 
+    CONSTRAINT fk_fact_date FOREIGN KEY (order_purchase_date)
         REFERENCES dim_time(date_id),
     CONSTRAINT check_price CHECK (price >= 0),
     CONSTRAINT check_freight CHECK (freight_value >= 0),
@@ -198,10 +198,10 @@ CREATE INDEX idx_fact_order_date ON fact_order_items(order_purchase_date);
 CREATE INDEX idx_fact_order_status ON fact_order_items(order_status);
 CREATE INDEX idx_fact_delayed ON fact_order_items(is_delayed);
 
-COMMENT ON TABLE fact_order_items IS 
+COMMENT ON TABLE fact_order_items IS
     'Fact table: Item-level e-commerce transactions. Grain: 1 row = 1 product in 1 order.';
 COMMENT ON COLUMN fact_order_items.total_value IS 'Measure: price + freight (revenue)';
-COMMENT ON COLUMN fact_order_items.has_delivery_date IS 
+COMMENT ON COLUMN fact_order_items.has_delivery_date IS
     'Flag: 1 if delivered, 0 if null. Use instead of NULL for cleaner queries.';
 COMMENT ON COLUMN fact_order_items.etl_loaded_at IS 'Data lineage: when loaded';
 
@@ -213,59 +213,59 @@ COMMENT ON COLUMN fact_order_items.etl_loaded_at IS 'Data lineage: when loaded';
 -- AGG_CUSTOMER_METRICS: Pre-calculated customer KPIs
 CREATE TABLE IF NOT EXISTS agg_customer_metrics (
     customer_id VARCHAR(50) PRIMARY KEY,
-    
+
     total_orders INT,
     total_revenue DECIMAL(12, 2),
     avg_order_value DECIMAL(10, 2),
     min_order_value DECIMAL(10, 2),
     max_order_value DECIMAL(10, 2),
-    
+
     avg_delivery_days INT,
     delayed_rate DECIMAL(5, 4),
-    
+
     first_order_date DATE,
     last_order_date DATE,
     days_as_customer INT,
-    
+
     etl_loaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_agg_customer FOREIGN KEY (customer_id) 
+
+    CONSTRAINT fk_agg_customer FOREIGN KEY (customer_id)
         REFERENCES dim_customers(customer_id)
 );
 
 CREATE INDEX idx_agg_customer_revenue ON agg_customer_metrics(total_revenue DESC);
 CREATE INDEX idx_agg_customer_orders ON agg_customer_metrics(total_orders DESC);
 
-COMMENT ON TABLE agg_customer_metrics IS 
+COMMENT ON TABLE agg_customer_metrics IS
     'Aggregation: Pre-calculated customer-level metrics for dashboard performance';
 
 
 -- AGG_PRODUCT_METRICS: Pre-calculated product performance
 CREATE TABLE IF NOT EXISTS agg_product_metrics (
     product_id VARCHAR(50) PRIMARY KEY,
-    
+
     orders_count INT,
     units_sold INT,
-    
+
     total_revenue DECIMAL(12, 2),
     avg_price DECIMAL(10, 2),
-    
+
     avg_delivery_days INT,
     delayed_rate DECIMAL(5, 4),
-    
+
     first_sale_date DATE,
     last_sale_date DATE,
-    
+
     etl_loaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_agg_product FOREIGN KEY (product_id) 
+
+    CONSTRAINT fk_agg_product FOREIGN KEY (product_id)
         REFERENCES dim_products(product_id)
 );
 
 CREATE INDEX idx_agg_product_revenue ON agg_product_metrics(total_revenue DESC);
 CREATE INDEX idx_agg_product_units ON agg_product_metrics(units_sold DESC);
 
-COMMENT ON TABLE agg_product_metrics IS 
+COMMENT ON TABLE agg_product_metrics IS
     'Aggregation: Pre-calculated product performance metrics';
 
 
@@ -273,20 +273,20 @@ COMMENT ON TABLE agg_product_metrics IS
 CREATE TABLE IF NOT EXISTS agg_monthly_revenue (
     year INT NOT NULL,
     month INT NOT NULL,
-    
+
     total_revenue DECIMAL(12, 2),
     order_count INT,
     item_count INT,
     unique_customers INT,
     avg_order_value DECIMAL(10, 2),
-    
+
     etl_loaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
+
     PRIMARY KEY (year, month),
     CONSTRAINT check_month_valid CHECK (month >= 1 AND month <= 12)
 );
 
-COMMENT ON TABLE agg_monthly_revenue IS 
+COMMENT ON TABLE agg_monthly_revenue IS
     'Aggregation: Monthly revenue trends for time-series analysis';
 
 
@@ -305,7 +305,7 @@ CREATE TABLE IF NOT EXISTS data_quality_log (
     details TEXT
 );
 
-COMMENT ON TABLE data_quality_log IS 
+COMMENT ON TABLE data_quality_log IS
     'Data quality monitoring: track validation results over time';
 
 """
@@ -332,7 +332,7 @@ SELECT
 FROM fact_order_items f
 GROUP BY f.order_id, f.customer_id, f.order_purchase_date;
 
-COMMENT ON VIEW v_order_metrics IS 
+COMMENT ON VIEW v_order_metrics IS
     'Order-level view: Aggregates item-level facts to order grain for easier querying';
 
 
@@ -353,7 +353,7 @@ JOIN dim_customers c ON f.customer_id = c.customer_id
 WHERE f.is_delivered = 1
 GROUP BY c.customer_id, c.customer_city, c.customer_state;
 
-COMMENT ON VIEW v_customer_history IS 
+COMMENT ON VIEW v_customer_history IS
     'Customer view: Summary for RFM segmentation and customer analysis';
 
 
@@ -372,7 +372,7 @@ FROM fact_order_items f
 JOIN dim_products p ON f.product_id = p.product_id
 GROUP BY p.product_id, p.product_category_name;
 
-COMMENT ON VIEW v_product_performance IS 
+COMMENT ON VIEW v_product_performance IS
     'Product view: Sales and delivery performance by product';
 
 
@@ -392,7 +392,7 @@ WHERE f.is_delivered = 1
 GROUP BY dt.year, dt.month, dt.month_name
 ORDER BY dt.year DESC, dt.month DESC;
 
-COMMENT ON VIEW v_monthly_trend IS 
+COMMENT ON VIEW v_monthly_trend IS
     'Time series view: Monthly revenue and order trends';
 
 """
@@ -416,7 +416,7 @@ CREATE OR REPLACE FUNCTION log_quality_check(
 )
 RETURNS VOID AS $$
 BEGIN
-    INSERT INTO data_quality_log 
+    INSERT INTO data_quality_log
         (check_name, table_name, records_checked, records_failed, check_result, details)
     VALUES (p_check_name, p_table_name, p_total, p_failed, p_result, p_details);
 END;
@@ -425,7 +425,7 @@ $$ LANGUAGE plpgsql;
 
 -- Quality Check 1: Referential Integrity
 -- ✅ PRODUCTION: Check that all foreign keys are valid
-SELECT 
+SELECT
     'FK_INTEGRITY' as check_type,
     COUNT(*) as orphaned_records
 FROM fact_order_items f

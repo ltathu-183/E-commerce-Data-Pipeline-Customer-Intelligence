@@ -1,24 +1,23 @@
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
 
 # Add src to path so the ETL module can be imported in this test suite.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+import logging
+
 from etl_pipeline import (
     Config,
     DatabaseConfig,
-    DataExtractor,
     DataCleaner,
+    DataExtractor,
     DataTransformer,
     ReviewNLP,
 )
 
-import logging
-import pytest
 
 @pytest.fixture(autouse=True)
 def _suppress_logging_for_tests():
@@ -26,7 +25,7 @@ def _suppress_logging_for_tests():
     logging.disable(logging.CRITICAL)
     yield
     logging.disable(logging.NOTSET)
-    
+
 @pytest.fixture
 def df_with_missing_values() -> pd.DataFrame:
     return pd.DataFrame(
@@ -145,16 +144,16 @@ class TestDataCleaner:
         # Drop action removes row with null in dropme (index 1), leaving 3 rows
         assert cleaned.shape[0] == 3
         assert cleaned["dropme_is_missing"].tolist() == [0, 0, 0]
-        
+
         # After drop, zero column has [None, None, 4.0] → fill with 0 → [0.0, 0.0, 4.0]
         assert cleaned["zero"].tolist() == [0.0, 0.0, 4.0]
-        
+
         # Median: pandas ignores NaN, so median of [6.0] = 6.0 → [6.0, 6.0, 6.0]
         assert cleaned["median"].tolist() == [6.0, 6.0, 6.0]
-        
+
         # Unknown fill: ["a", "b", None] → ["a", "b", "unknown"]
         assert cleaned["unknown"].tolist() == ["a", "b", "unknown"]
-        
+
         # Keep null: [None, None, 2.0] → still 2 nulls
         assert cleaned["keep"].isnull().sum() == 2
 
