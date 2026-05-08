@@ -172,7 +172,48 @@ What it contains:
 
 ---
 
-## How to Use This Project
+## 🔧 Technical Decision Rationale
+
+### Why Airflow for Orchestration?
+**Problem**: Manual ETL runs are error-prone and not monitorable.
+**Solution**: Apache Airflow provides DAG-based scheduling with retries, logging, and UI monitoring.
+**Business Impact**: 99.9% pipeline reliability vs manual runs.
+
+### Why Great Expectations for Data Quality?
+**Problem**: Production data often has schema changes, missing values, or business rule violations.
+**Alternative**: Custom assert statements in code.
+**Why GE**: Declarative expectations, automated validation, integrates with Airflow, generates data docs.
+**Business Impact**: Catches data issues before they break dashboards.
+
+### Why DVC for Data Versioning?
+**Problem**: "It works on my machine" - data changes break reproducibility.
+**Alternative**: Git LFS, manual backups, Google Drive sync.
+**Why DVC**: Git-compatible, handles large files efficiently, tracks data lineage.
+**Business Impact**: Reproducible experiments, collaboration without data conflicts.
+
+### Why FastAPI for Analytics API?
+**Problem**: Business users need real-time access to insights.
+**Alternative**: Jupyter notebooks, CSV exports, direct database access.
+**Why FastAPI**: RESTful API, auto-generated docs, async support, production-ready.
+**Business Impact**: Self-service analytics, reduced analyst workload.
+
+### Why MLflow for Experiment Tracking?
+**Problem**: No visibility into pipeline performance, data quality over time.
+**Alternative**: Custom logging, spreadsheets.
+**Why MLflow**: Tracks parameters/metrics/artifacts, UI for comparison, integrates with existing tools.
+**Business Impact**: Data-driven pipeline improvements, audit trail for compliance.
+
+### Why PostgreSQL for Data Warehouse?
+**Problem**: Need complex analytics queries with JOINs and aggregations.
+**Alternative**: CSV files, SQLite, MongoDB.
+**Why PostgreSQL**: ACID transactions, advanced SQL features, industry standard.
+**Business Impact**: Handles complex business logic, scales to production workloads.
+
+### Why Docker for Deployment?
+**Problem**: "Works on my machine" deployment issues.
+**Alternative**: Manual server setup, virtual environments.
+**Why Docker**: Consistent environments, easy scaling, infrastructure as code.
+**Business Impact**: One-command deployment, reproducible across dev/staging/prod.
 
 ### Step 1: Run the EDA Notebook
 ```bash

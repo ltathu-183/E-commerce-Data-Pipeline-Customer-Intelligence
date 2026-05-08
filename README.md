@@ -4,10 +4,228 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![pytest](https://img.shields.io/badge/pytest-Passing-green.svg)](https://pytest.org/)
-[![CI](https://github.com/yourusername/ecommerce-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/ecommerce-data-pipeline/actions/workflows/ci.yml)
+[![CI](https://github.com/yourusername/ecommerce-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ltathu-183/ecommerce-data-pipeline/actions/workflows/ci.yml)
 
 **Turn 113k raw e-commerce orders into $16M+ revenue insights and 96k customer segments in under 5 minutes.** This production-grade ETL pipeline transforms Brazil's largest marketplace data into a star schema warehouse, enabling RFM segmentation, cohort analysis, and business intelligence that drives 20%+ revenue growth through targeted customer strategies.
+## 🏗️ Architecture Overview
 
+```
+Raw Data (CSV) → ETL Pipeline (Airflow) → Data Warehouse (PostgreSQL)
+       ↓              ↓                          ↓
+    DVC Tracking  Great Expectations        Business Analytics
+       ↓              ↓                          ↓
+   Version Control  Data Quality Checks     RFM Segmentation
+```
+
+### Why This Architecture?
+
+| Component | Tool Choice | Rationale |
+|-----------|-------------|-----------|
+| **Data Versioning** | DVC + Git | Raw data versioning prevents "works on my machine" issues. DVC handles large CSV files efficiently without bloating Git. |
+| **Orchestration** | Apache Airflow | Production-grade scheduling with DAGs, retries, and monitoring. Better than cron jobs for complex dependencies. |
+| **Data Quality** | Great Expectations | Automated validation catches data drift early. Prevents bad data from breaking downstream analytics. |
+| **Database** | PostgreSQL | ACID compliance for transactional integrity. Better than SQLite for production analytics workloads. |
+| **Deployment** | Docker Compose | One-command setup ensures reproducibility across environments. |
+
+## 📋 Prerequisites
+
+- **Python 3.11+** with `uv` package manager
+- **Docker Desktop** (for PostgreSQL and Airflow)
+- **Git** for version control
+- **4GB RAM** minimum for data processing
+
+## 🚀 Quick Start (Automated Setup)
+
+**One-command setup with full reproducibility:**
+
+```bash
+git clone https://github.com/yourusername/ecommerce-data-pipeline.git
+cd ecommerce-data-pipeline
+python scripts/setup.py
+```
+
+This script automatically:
+- ✅ Installs dependencies
+- ✅ Starts PostgreSQL + Airflow
+- ✅ Runs ETL pipeline
+- ✅ Starts analytics API
+- ✅ Runs test suite
+- ✅ Validates everything works
+
+**Manual setup** (if automated fails):
+
+```bash
+# 1. Install dependencies
+uv sync --extra mlops
+
+# 2. Start infrastructure
+docker-compose up -d
+
+# 3. Run ETL
+python src/etl_pipeline.py
+
+# 4. Start API (optional)
+uvicorn src.api:app --reload
+```
+
+### 🧪 Run Tests
+
+```bash
+# Unit tests
+pytest tests/
+
+# Data quality validation
+python -c "from tests.data_quality_ge import validate_data; validate_data(pd.read_csv('data/raw/olist_customers_dataset.csv'))"
+```
+
+### 📊 View Analytics
+
+```bash
+# Connect to PostgreSQL
+psql -h localhost -U postgres -d ecommerce
+
+# Run sample queries
+\i sql/analytics_queries.sql
+```
+
+## 🔧 Development Setup
+
+### For Contributors
+
+```bash
+# Install all dependencies
+uv sync --extra dev --extra mlops
+
+# Run linting
+ruff check .
+
+# Run type checking
+mypy src/
+
+# Run tests with coverage
+pytest --cov=src tests/
+```
+
+### Environment Variables
+
+Create `.env` file:
+
+```bash
+# Database
+DB_HOST=localhost
+DB_USER=postgres
+DB_PASSWORD=password
+DB_NAME=ecommerce
+
+# Pipeline
+USE_DATABASE=true
+ENABLE_NLP=false
+```
+
+## 📁 Project Structure
+
+```
+e-commerce-data-pipeline/
+├── dags/                    # Airflow DAGs for orchestration
+├── data/
+│   └── raw/                # Raw CSV data (DVC tracked)
+├── great_expectations/     # Data quality framework
+├── notebooks/              # EDA & RFM analysis
+├── reports/                # Business insights & docs
+├── scripts/                # Utility scripts
+├── sql/                    # Database schemas & queries
+├── src/                    # Core ETL code
+│   ├── analytics_queries.py # Business SQL queries
+│   ├── config.py           # Configuration management
+│   └── etl_pipeline.py     # Main ETL logic
+├── tests/                  # Unit tests & data quality
+└── docker-compose.yml      # Infrastructure as code
+```
+
+## 🧪 Testing Strategy
+
+### Unit Tests (`pytest`)
+- **ETL Functions**: Test data transformations
+- **Config Loading**: Test environment variable handling
+- **Error Handling**: Test failure scenarios
+
+### Data Quality Tests (`Great Expectations`)
+- **Schema Validation**: Column existence, data types
+- **Business Rules**: Price > 0, valid order statuses
+- **Statistical Checks**: Distribution drift detection
+
+### Integration Tests
+- **End-to-End Pipeline**: Full ETL execution
+- **Database Constraints**: Foreign key validation
+
+## 🚢 Deployment & MLOps
+
+### Why These Choices?
+
+| Component | Alternative Considered | Why This Wins |
+|-----------|----------------------|----------------|
+| **FastAPI** | Flask/Django | Async support, auto-generated OpenAPI docs, modern Python |
+| **MLflow** | Weights & Biases | Open-source, integrates with existing stack, tracks ETL not just ML |
+| **Docker Compose** | Kubernetes | Simple for demos, one-command deployment, no cluster needed |
+| **PostgreSQL** | MySQL/MongoDB | ACID transactions, complex JOINs, industry standard for analytics |
+
+### Production Deployment
+
+```bash
+# 1. Build and deploy
+docker-compose -f docker-compose.prod.yml up -d
+
+# 2. Check services
+curl http://localhost:8000/health  # API health
+curl http://localhost:8080         # Airflow UI
+
+# 3. Run ETL pipeline via Airflow
+# Trigger DAG in Airflow UI or via API
+
+# 4. Monitor with MLflow
+mlflow ui  # View experiment tracking
+```
+
+### API Endpoints
+
+- `GET /` - Health check
+- `GET /customers/top/{limit}` - Top customers by revenue
+- `GET /revenue/monthly` - Monthly revenue trends
+- `GET /products/top/{limit}` - Top products by sales
+- `GET /health` - Database connectivity check
+
+**API Documentation**: http://localhost:8000/docs (Swagger UI)
+
+### MLOps Pipeline
+
+```
+Raw Data → DVC → ETL (Airflow) → Data Quality (GE) → Analytics API → MLflow Tracking
+     ↑                                                                 ↓
+  Versioned                                                       Experiment Logs
+```
+
+### Scaling Considerations
+
+- **Data Volume**: For >1M rows, switch to Spark/Airflow workers
+- **API Load**: Add Redis cache, load balancer for high traffic
+- **Monitoring**: Add Prometheus/Grafana for production metrics
+- **Security**: Add authentication, HTTPS, database connection pooling
+
+## 🤝 Contributing
+
+1. **Fork** the repository
+2. **Create** feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to branch (`git push origin feature/amazing-feature`)
+5. **Open** Pull Request
+
+### Code Quality Standards
+- **Linting**: `ruff check .`
+- **Type Hints**: `mypy src/`
+- **Tests**: `pytest --cov=src`
+- **Documentation**: Update README for new features
+
+## 📈 Business Impact & Outcomes
 ## Business Impact & Outcomes
 
 ### 💰 Revenue Intelligence
