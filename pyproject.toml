@@ -27,6 +27,7 @@ dependencies = [
     "psycopg>=3.1.0",  # Newer version, but may need compilation
     "pytest>=9.0.3",
     "jupyter>=1.1.1",
+    "dagshub>=0.7.0",
 ]
 
 requires-python = ">=3.11,<3.12" 
@@ -45,6 +46,8 @@ mlops = [
     "dvc",
     "mlflow",
     "dagshub",               # Useful if you are using remote tracking
+    "apache-airflow>=2.8.0",
+    "great-expectations>=0.18.0",
 ]
 test = ["pytest>=7.0", "pytest-cov>=4.0"]
 
