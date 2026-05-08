@@ -10,19 +10,16 @@ This DAG implements the ETL pipeline for Olist e-commerce data:
 Includes data quality checks with Great Expectations.
 """
 
+import sys
 from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.operators.bash import BashOperator
-from airflow.providers.postgres.hooks.postgres import PostgresHook
-import pandas as pd
-import os
-import sys
 
-# Add src to path
-sys.path.append('/opt/airflow/src')
+# Add project root so `src` package can be imported
+sys.path.append('/opt/airflow')
 
-from etl_pipeline import DataExtractor, DataCleaner, DataTransformer, DataLoader
+from src.etl_pipeline import DataCleaner, DataExtractor, DataLoader, DataTransformer
 
 default_args = {
     'owner': 'data_engineer',
@@ -113,3 +110,4 @@ data_quality = PythonOperator(
 
 # Set dependencies
 extract >> transform >> data_quality >> load
+

@@ -4,7 +4,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![pytest](https://img.shields.io/badge/pytest-Passing-green.svg)](https://pytest.org/)
-[![CI](https://github.com/ltathu-183/ecommerce-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ltathu-183/ecommerce-data-pipeline/actions/workflows/ci.yml)
+[![CI](https://github.com/ltathu-183/E-commerce-Data-Pipeline-Customer-Intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/ltathu-183/E-commerce-Data-Pipeline-Customer-Intelligence/actions/workflows/ci.yml)
 
 **Turn 113k raw e-commerce orders into $16M+ revenue insights and 96k customer segments in under 5 minutes.** This production-grade ETL pipeline transforms Brazil's largest marketplace data into a star schema warehouse, enabling RFM segmentation, cohort analysis, and business intelligence that drives 20%+ revenue growth through targeted customer strategies.
 ## 🏗️ Architecture Overview
@@ -75,7 +75,7 @@ uvicorn src.api:app --reload
 pytest tests/
 
 # Data quality validation
-python -c "from tests.data_quality_ge import validate_data; validate_data(pd.read_csv('data/raw/olist_customers_dataset.csv'))"
+python -c "from tests.data_quality_ge import validate_data; import pandas as pd; results = validate_data(pd.read_csv('data/raw/olist_customers_dataset.csv')); print('Passed' if results['success'] else 'Failed'); print(f'Dataset: {results[\"statistics\"][\"row_count\"]} rows')"
 ```
 
 ### 📊 View Analytics

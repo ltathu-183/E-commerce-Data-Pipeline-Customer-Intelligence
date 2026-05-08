@@ -1341,8 +1341,10 @@ mlops = [
     { name = "dagshub" },
     { name = "docker" },
     { name = "dvc" },
+    { name = "fastapi" },
     { name = "great-expectations" },
     { name = "mlflow" },
+    { name = "uvicorn" },
 ]
 test = [
     { name = "pytest" },
@@ -1366,6 +1368,7 @@ requires-dist = [
     { name = "docker", marker = "extra == 'mlops'" },
     { name = "dvc", marker = "extra == 'mlops'" },
     { name = "emoji", specifier = ">=2.2.0" },
+    { name = "fastapi", marker = "extra == 'mlops'", specifier = ">=0.104.0" },
     { name = "great-expectations", marker = "extra == 'mlops'", specifier = ">=0.18.0" },
     { name = "ipykernel", marker = "extra == 'dev'" },
     { name = "jupyter", specifier = ">=1.1.1" },
@@ -1391,6 +1394,7 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0.0" },
     { name = "statsmodels", specifier = ">=0.14.0" },
     { name = "textblob", specifier = ">=0.17.0" },
+    { name = "uvicorn", marker = "extra == 'mlops'", specifier = ">=0.24.0" },
 ]
 provides-extras = ["dev", "mlops", "test"]
 

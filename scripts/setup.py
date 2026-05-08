@@ -13,12 +13,14 @@ Ensures complete reproducibility by automating:
 Usage: python scripts/setup.py
 """
 
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
+
 import requests
-import os
+
 
 def run_cmd(cmd: str, desc: str, check: bool = True) -> bool:
     """Run command with status reporting"""
@@ -48,7 +50,7 @@ def wait_for_service(url: str, timeout: int = 30) -> bool:
             if response.status_code == 200:
                 print(f"   ✅ Service ready at {url}")
                 return True
-        except:
+        except requests.RequestException:
             pass
         time.sleep(2)
 
@@ -121,3 +123,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

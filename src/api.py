@@ -12,15 +12,14 @@ Usage:
     # API docs: http://localhost:8000/docs
 """
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
-import sqlalchemy as sa
-from sqlalchemy import text
-from typing import List, Optional, Dict, Any
 import logging
 
-from src.config import DatabaseConfig
+import sqlalchemy as sa
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+
+from src.etl_pipeline import DatabaseConfig
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -49,7 +48,7 @@ async def root():
     """API health check"""
     return {"message": "E-Commerce Analytics API", "status": "healthy"}
 
-@app.get("/customers/top/{limit}")
+@app.get("/customers/top")
 async def get_top_customers(limit: int = Query(10, ge=1, le=100)):
     """Get top customers by revenue"""
     try:
@@ -90,7 +89,7 @@ async def get_top_customers(limit: int = Query(10, ge=1, le=100)):
 
     except Exception as e:
         logger.error(f"Error fetching top customers: {str(e)}")
-        raise HTTPException(status_code=500, detail="Database query failed")
+        raise HTTPException(status_code=500, detail="Database query failed") from e
 
 @app.get("/revenue/monthly")
 async def get_monthly_revenue():
@@ -129,7 +128,7 @@ async def get_monthly_revenue():
 
     except Exception as e:
         logger.error(f"Error fetching monthly revenue: {str(e)}")
-        raise HTTPException(status_code=500, detail="Database query failed")
+        raise HTTPException(status_code=500, detail="Database query failed") from e
 
 @app.get("/customers/segment/{segment}")
 async def get_customers_by_segment(segment: str):
@@ -154,9 +153,9 @@ async def get_customers_by_segment(segment: str):
 
     except Exception as e:
         logger.error(f"Error fetching segment {segment}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Database query failed")
+        raise HTTPException(status_code=500, detail="Database query failed") from e
 
-@app.get("/products/top/{limit}")
+@app.get("/products/top")
 async def get_top_products(limit: int = Query(10, ge=1, le=100)):
     """Get top products by revenue"""
     try:
@@ -193,7 +192,7 @@ async def get_top_products(limit: int = Query(10, ge=1, le=100)):
 
     except Exception as e:
         logger.error(f"Error fetching top products: {str(e)}")
-        raise HTTPException(status_code=500, detail="Database query failed")
+        raise HTTPException(status_code=500, detail="Database query failed") from e
 
 @app.get("/health")
 async def health_check():

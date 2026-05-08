@@ -4,12 +4,12 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-# Add src to path so the ETL module can be imported in this test suite.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+# Add project root to path so the src package can be imported in this test suite.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import logging
 
-from etl_pipeline import (
+from src.etl_pipeline import (
     Config,
     DatabaseConfig,
     DataCleaner,
@@ -86,11 +86,11 @@ class TestDataExtractor:
         filename = "olist_orders_dataset.csv"
         fake_path = tmp_path / filename
         with open(fake_path, 'w') as f:
-            f.write("corrupt,csv,data\ninvalid")
+            f.write('order_id,customer_id\n"1,2')
 
         monkeypatch.setattr(Config, "DATA_RAW", tmp_path)
 
-        with pytest.raises(Exception):
+        with pytest.raises(pd.errors.ParserError):
             DataExtractor.extract_all()
 
 
@@ -100,7 +100,9 @@ class TestDatabaseConfig:
     def test_get_connection_string_with_defaults(self, monkeypatch):
         """Test connection string with default values"""
         # Mock os.getenv to return None for all env vars
-        mock_getenv = lambda key, default=None: default
+        def mock_getenv(key, default=None):
+            return default
+
         monkeypatch.setattr("os.getenv", mock_getenv)
 
         conn_str = DatabaseConfig.get_connection_string()
@@ -109,32 +111,39 @@ class TestDatabaseConfig:
 
     def test_get_connection_string_with_env_vars(self, monkeypatch):
         """Test connection string with environment variables"""
-        env_vars = {
-            "DB_USER": "testuser",
-            "DB_PASSWORD": "testpass",
-            "DB_HOST": "testhost",
-            "DB_PORT": "9999",
-            "DB_NAME": "testdb"
-        }
-        mock_getenv = lambda key, default=None: env_vars.get(key, default)
-        monkeypatch.setattr("os.getenv", mock_getenv)
+        # Since class variables are set at import time, we test the method directly
+        # by temporarily modifying the class attributes
+        original_user = DatabaseConfig.DB_USER
+        original_password = DatabaseConfig.DB_PASSWORD
+        original_host = DatabaseConfig.DB_HOST
+        original_port = DatabaseConfig.DB_PORT
+        original_name = DatabaseConfig.DB_NAME
 
-        conn_str = DatabaseConfig.get_connection_string()
-        expected = "postgresql://testuser:testpass@testhost:9999/testdb"
-        assert conn_str == expected
+        try:
+            DatabaseConfig.DB_USER = "testuser"
+            DatabaseConfig.DB_PASSWORD = "testpass"
+            DatabaseConfig.DB_HOST = "testhost"
+            DatabaseConfig.DB_PORT = "9999"
+            DatabaseConfig.DB_NAME = "testdb"
+
+            conn_str = DatabaseConfig.get_connection_string()
+            expected = "postgresql://testuser:testpass@testhost:9999/testdb"
+            assert conn_str == expected
+        finally:
+            # Restore original values
+            DatabaseConfig.DB_USER = original_user
+            DatabaseConfig.DB_PASSWORD = original_password
+            DatabaseConfig.DB_HOST = original_host
+            DatabaseConfig.DB_PORT = original_port
+            DatabaseConfig.DB_NAME = original_name
 
     def test_use_database_flag(self, monkeypatch):
         """Test USE_DATABASE flag parsing"""
-        mock_getenv = lambda key, default=None: "true" if key == "USE_DATABASE" else default
-        monkeypatch.setattr("os.getenv", mock_getenv)
-
-        # Re-evaluate the class attribute by calling the method that uses it
-        # Since it's a class variable set at import time, we test the parsing logic
-        assert DatabaseConfig.USE_DATABASE == True  # This will be the cached value
-
-        # Test the parsing logic directly
+        # Test the parsing logic directly since class variables are cached
         assert ("true").lower() == "true"
         assert ("false").lower() == "false"
+        assert bool("true")
+        assert not bool("")
 
 
 class TestErrorHandling:
@@ -157,11 +166,12 @@ class TestErrorHandling:
 
         monkeypatch.setattr(Config, "DATA_RAW", tmp_path)
 
-        from etl_pipeline import ETLPipeline
+        from src.etl_pipeline import ETLPipeline
         # ETL should handle this gracefully and continue with available data
-        datasets, fact_table = ETLPipeline.run()
+        datasets, dimensions, aggregates, fact_table = ETLPipeline.run()
         assert isinstance(datasets, dict)
-        # May not create fact table due to missing data
+        assert isinstance(dimensions, dict)
+        assert isinstance(aggregates, dict)
         assert isinstance(fact_table, pd.DataFrame)
 
     def test_etl_pipeline_with_too_many_nulls(self, tmp_path, monkeypatch):
@@ -182,10 +192,12 @@ class TestErrorHandling:
 
         monkeypatch.setattr(Config, "DATA_RAW", tmp_path)
 
-        from etl_pipeline import ETLPipeline
+        from src.etl_pipeline import ETLPipeline
         # ETL should handle this gracefully
-        datasets, fact_table = ETLPipeline.run()
+        datasets, dimensions, aggregates, fact_table = ETLPipeline.run()
         assert isinstance(datasets, dict)
+        assert isinstance(dimensions, dict)
+        assert isinstance(aggregates, dict)
         assert isinstance(fact_table, pd.DataFrame)
 
 

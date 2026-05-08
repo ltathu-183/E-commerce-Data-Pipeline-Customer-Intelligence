@@ -11,18 +11,17 @@ Usage:
     python src/mlflow_tracking.py
 """
 
+import json
+import time
+from datetime import datetime
+from pathlib import Path
+
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-import time
-from datetime import datetime
-import os
-import json
-from pathlib import Path
 
-# Import ETL components
-from src.etl_pipeline import ETLPipeline, Config
-from src.config import DatabaseConfig
+from src.etl_pipeline import Config, DatabaseConfig, ETLPipeline
+
 
 def setup_mlflow():
     """Setup MLflow tracking"""
@@ -49,7 +48,7 @@ def log_etl_run():
 
         try:
             # Run ETL pipeline
-            datasets, fact_table = ETLPipeline.run()
+            datasets, dimensions, aggregates, fact_table = ETLPipeline.run()
 
             processing_time = time.time() - start_time
 
@@ -158,3 +157,4 @@ if __name__ == "__main__":
 
     print("🎯 MLflow tracking complete!")
     print("📈 View results with: mlflow ui")
+
